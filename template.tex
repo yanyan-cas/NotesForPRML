@@ -28,6 +28,13 @@
 
 \usepackage{amsmath,amsfonts,graphicx}
 \usepackage{listing}
+\usepackage{mathrsfs}
+
+\usepackage{color}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
 
 %
 % The following commands set up the lecnum (lecture number)
@@ -136,6 +143,133 @@ SVM is a decision machine and so does not provide posterior probabilities. RVM p
 %----------------------------------------------------------------------------------------
 
 \section{Maximum Margin Classifiers} 
+
+Two-class classification problem:
+\begin{equation}
+y(x) = w^T \phi(x) + b
+\end{equation}
+where $\phi$ denotes a fixed feature-space transformation, $ b$ explicit.
+
+Training set comprises N input vectors $x_1, \cdots, x_N$ with target $t_1, /cdots, t_N$ where $t_N \in \{-1, 1\}$ and new data points are classified according to the sign of $y(x)$.
+
+Training data - linearly separable in feature space, so  that there exits one choice of $w$ and $b$ such that by 1.1 satisfies $y(x_n)>0$ for points having $t_n=+1$ and $y(x_n)<0$ for $t_n=-1$.
+
+In section 4, the perceptron algorithm is guaranteed to find a solution for the linearly separable problem. The solution deeps on the initial value and the order of the data points are presented - if there are multiple solutions we should try to find one with the smallest generalizaiton error.
+SVM approaches this problem through the concept of the \textbf{margin} - the smallest distance between the decision boundary and any of the samples.
+
+Perpendicular distance of a point $x$ from a hyperplane: $ {\lvert y(x) \rvert} / \lVert w \rVert$. We are only interested in solutions for which all data points are correctly classified ($t_n y(x_n)) >0$ for all n). So we have the distance of a point $x_n$ to the decision surface is given by:
+\begin{equation}
+\frac{t_ny(x_n)}{\lVert w \rVert} = \frac{t_n(w^T \phi(x_n)+b)}{\lVert w \rVert}
+\end{equation}
+
+{\color{red}{The margin is given by the perpendicular distance to the closest point $x_n$ from the data set, $w$ and $b$ need optimized in order to maximize the distance}}.
+
+Then the maximum margin solution is found by
+\begin{equation}
+\argmax_{w, b} \{ \frac{1}{\lVert w \rVert} \min_n[t_n(w^T \phi(x_n)+b)]\}
+\end{equation}
+
+in which $\lVert w \rVert$ does not depend on $n$.
+The direct solution of this optimization problem would be complex $\Rightarrow$ an equivalent problem easier to solve:
+
+\begin{equation}
+w \rightarrow \kappa w
+\end{equation}
+
+\begin{equation}
+b \rightarrow \kappa b
+\end{equation}
+the rescaling would not change the distance.
+We then use this freedom to set 
+\begin{equation}
+t_n(w^T \phi(x_n)+b)=1
+\end{equation}
+for the point that is closest to the surface.  
+
+The canonical representation of the decision hyperplane:
+\begin{equation}
+t_n(w^T \phi(x_n)+b) \geq 1,   n = 1,\cdots, N
+\end{equation}
+When the equality holds, the constraints are said to be active.
+
+There would always be at least one active constraint, because there will always be a closest point, and once the margin has been maximized there will be at leat two active constraints.  The optimization problem minimizing $\lVert w \rVert ^2$ is equivalent to maximize $\lVert w \rVert^{-1}$, so we need to solve the problem:
+\begin{equation}
+\argmin_{w,b} \frac{1}{2} \lVert w \rVert ^2
+\end{equation}
+subject to the constraints given by 1.7.
+
+We introduce the Lagrange multipliers $a_n \geq 0$ with one multiplier $a_n$ for each of the constraints in1.7 giving the Lagrangian function:
+
+\begin{equation}
+L(w,b,a) = \frac{1}{2} \lVert w \rVert^2 - \sum_{n=1}^{N} a_n \{t_n(w^T \phi(x_n)+b)-1\}
+\end{equation}
+where $a=(a_1,\cdots,a_N)^T$.
+
+Setting the derivatives of $L(w, b, a)$ with respect to $w$ abd $b$ equal to zero, we obtain the following conditions:
+\begin{equation}
+w= \sum_{n=1}^{N} a_n t_n \phi(x_n)
+\end{equation}
+
+\begin{equation}
+0 = \sum_{n=1}^{N}a_nt_n
+\end{equation}
+Eliminating $w$ and $b$ from $L(w, b, a)$ using these conditions then gives the dual representation of the \textbf{maximum margin problem} in which we maximize
+\begin{equation}
+\tilde{L}(a) = \sum_{n=1}^{N}a_n - \frac{1}{2}\sum_{n=1}^{N}\sum_{m=1}^{N} a_na_mt_nt_mk(x_n,x_m)
+\end{equation}
+with respect to a subject to the constraints
+\begin{equation}
+a_n \geq 0,n = 1,\cdots,N
+\end{equation}
+\begin{equation}
+\sum_{n=1}^{N}  a_nt_n = 0
+\end{equation}
+
+Here the kernel function is defined by $k(x, x')=\phi(x)^T\phi(x')$. This takes the form of a \textbf{quadratic programming problem}.
+
+Computational complexity - $O(M^3)$.
+
+{\color{red}{With dual formulation, the original optimization problem involved minimizing over $M$ variables into the dual problem with $N$ variables}}.
+
+For fixed set of basis functions $M$ is smaller than the data points number $N$, dual representation seems useless.
+However, it allows the model to be reformulated using kernels, and the maximum margin classifier can be applied efficiently to feature spaces whose dimensionality $M$ exceeds the number of data points $N$, including infinite feature spaces.
+
+The kernel formulation also makes clear the role of the constraint that the kernel function $k(x, x')$ be \textbf{positive definite} - this ensures the Lagrangian function $\tilde{J}(a)$ is bounded below, giving rise to a well-defined optimization problem.
+
+So new data point can be evaluated by:
+\begin{equation}
+y(x) = w^T\phi(x)+b = \sum_{n=1}^{N} a_n t_n k(x, x_n)+b
+\end{equation}
+
+For the Karush-Kuhn-Tucker KKT condtion, which in this case require that the following three properties hold:
+\begin{equation}
+a_n\geq0
+\end{equation}
+\begin{equation}
+t_ny(x_n) - 1 \geq 0
+\end{equation}
+\begin{equation}
+a_n\{t_n y(x_n)-1\} = 0
+\end{equation}
+
+------------------------------
+
+check the Appendix E
+
+------------------------------
+
+For every data point, either $a_n=0$ or $t_ny(x_n)=1$, any data point for which $a_n=0$ will not appear in the sum in1.15 thus play no role in making predictions for new data points. \textbf{The remaining data points are called support vectors} - and they satisfy $t_ny(x_n)=1$, they lie on the maximum margin hyperplanes in feature space -- once the model is trained only the support vectors retained.
+
+Solving the quadratic programming problem for $a$, determine $b$ by 
+\begin{equation}
+t_n(\sum_{m\in \mathcal{S}} a_mt_mk(x_n, x_m)+b)=1
+\end{equation} where $\mathcal{S}$ denotes the set of indices of the support vectors.
+
+A more stable solution for b is:
+\begin{equation}
+b=\frac{1}{N_{\mathcal{S}}} \sum_{m\in \mathcal{S}} (t_n - \sum_{m\in \mathcal{S}} a_mt_mk(x_n, x_m) )
+\end{equation}
+where $N_{\mathcal{S}}$ is the total number of support vectors.
 
 \subsection{Overlapping class distributions}
 
